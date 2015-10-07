@@ -16,7 +16,7 @@ from db import SubscriptionDb
 
 DEFAULT_PORT = 8888
 log = logging.getLogger(__name__)
-s = HttpServer(DEFAULT_PORT)
+
 server = None
 
 # Things that would be cool:
@@ -63,7 +63,7 @@ class Server(object):
         if username not in self.topic_to_user_offsets[topic]:
             last_message_id = self.topic_last_message_id[topic]
             self.topic_to_user_offsets[topic][username] = last_message_id
-            self.db.add_subscription(topic, username)
+            launch(self.db.add_subscription, topic, username)
         yield Return(200, {}, "Subscription succeeded")
 
     @_o
@@ -80,7 +80,7 @@ class Server(object):
                 self.pop_message(topic, message_id)
                 num_msgs += 1
             log.debug("removed %s messages for %s", num_msgs, username)
-            self.db.remove_subscription(topic, username)
+            launch(self.db.remove_subscription, topic, username)
             yield Return(200, {}, "")
         except KeyError:
             yield Return(404, {}, "")
@@ -112,29 +112,38 @@ class Server(object):
         else:
             yield Return(204, {}, "")
 
-
 #
 # Http Requset Routing
 #
-@s.post("/:topic/:username")
-def handle_subscribe(request, topic, username):
-    response = yield server.subscribe(request, topic, username)
-    yield Return(response)
+def setup_routing(s):
+    """Monocle's request routing is a bit silly: You need to have an
+    instance of the server/router in order to use the routing
+    decorator. You also need to have parsed the arguments to specify a
+    port to the server.  Thus, we need to delay declaring the routes
+    until after the arguments have been parsed. There might be a way
+    around this but... Heyooo! Look who put a closure in their coding
+    exercise. Shiny!
 
-@s.delete("/:topic/:username")
-def handle_unsubscribe(request, topic, username):
-    response = yield server.unsubscribe(request, topic, username)
-    yield Return(response)
+    """
+    @s.post("/:topic/:username")
+    def handle_subscribe(request, topic, username):
+        response = yield server.subscribe(request, topic, username)
+        yield Return(response)
 
-@s.post("/:topic")
-def handle_publish(request, topic):
-    response = yield server.publish(request, topic)
-    yield Return(response)
+    @s.delete("/:topic/:username")
+    def handle_unsubscribe(request, topic, username):
+        response = yield server.unsubscribe(request, topic, username)
+        yield Return(response)
 
-@s.get("/:topic/:username")
-def handle_retrieve(request, topic, username):
-    response = yield server.retrieve(request, topic, username)
-    yield Return(response)
+    @s.post("/:topic")
+    def handle_publish(request, topic):
+        response = yield server.publish(request, topic)
+        yield Return(response)
+
+    @s.get("/:topic/:username")
+    def handle_retrieve(request, topic, username):
+        response = yield server.retrieve(request, topic, username)
+        yield Return(response)
 
 
 def setup_logging(logfile_path):
@@ -159,6 +168,9 @@ def setup_logging(logfile_path):
 def parse_args():
     parser = argparse.ArgumentParser(description='A simple Http Message Queue')
     parser.add_argument(
+        "-p", "--port", type=int, default=DEFAULT_PORT,
+        help="Port the server will listen on")
+    parser.add_argument(
         "-d", "--daemonize",
         action = "store_true", default=False,
         help='run as a daemon in the background')
@@ -170,10 +182,6 @@ def parse_args():
     parser.add_argument(
         "-l", "--logfile", metavar="FILE",
         help="Output to a logfile instead of stdout")
-    # parser.add_argument(
-    #     "-p", "--port",
-    #     default=DEFAULT_PORT, type=int,
-    #     help="Server port")
     parser.add_argument(
         "-f", "--file", metavar="FILE",
         dest="sql_filename",
@@ -181,7 +189,6 @@ def parse_args():
 
     args = parser.parse_args()
     return args
-
 
 @_o
 def main():
@@ -194,11 +201,15 @@ def main():
 
         db = SubscriptionDb(args.sql_filename)
         yield db.create_database()
+
+        s = HttpServer(args.port)
+        setup_routing(s)
         server = Server(db)
         yield server.load_subscriptions()
         add_service(s)
     except Exception as e:
         log.exception(e)
+
 
 if __name__ == '__main__':
     launch(main)
