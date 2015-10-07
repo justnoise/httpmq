@@ -37,10 +37,11 @@ class Message(object):
 class Server(object):
     def __init__(self, db):
         self.db = db
-        self.messages = defaultdict(dict)
+        self.messages = defaultdict(dict)  #[topic]=>[message_id]=>message
         self.topic_last_message_id = defaultdict(int)
-        self.topic_to_user_offsets = defaultdict(dict) # subscriptions
-
+        # subscriptions
+        # [topic]=>[username]=>last_topic_message_id
+        self.topic_to_user_offsets = defaultdict(dict)
 
     @_o
     def load_subscriptions(self):

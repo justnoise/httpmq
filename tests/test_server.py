@@ -83,6 +83,22 @@ class TestServer(TestCase):
         self.assertEqual(response[0], 200)
 
     @twistedtest_o
+    def test_unsubscribe_after_retrieve(self):
+        yield self.s.subscribe(self.req, self.topic, self.username)
+        yield self.s.subscribe(self.req, self.topic, "user2")
+        response = yield self.s.publish(self.req, self.topic)
+        response = yield self.s.publish(self.req, self.topic)
+        response = yield self.s.publish(self.req, self.topic)
+        self.assertEqual(len(self.s.messages[self.topic]), 3)
+        response = yield self.s.retrieve(self.req, self.topic, self.username)
+        self.assertEqual(len(self.s.messages[self.topic]), 3)
+        response = yield self.s.unsubscribe(self.req, self.topic, self.username)
+        self.assertEqual(len(self.s.messages[self.topic]), 3)
+        for message in self.s.messages[self.topic].values():
+            self.assertEqual(message.ref_count, 1)
+        self.assertEqual(response[0], 200)
+
+    @twistedtest_o
     def test_publish_no_subscribers(self):
         response = yield self.s.publish(self.req, self.topic)
         self.assertEqual(response[0], 200)
