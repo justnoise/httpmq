@@ -15,14 +15,24 @@ def twistedtest_o(f):
     return wrapper
 
 
+class FakeDb(object):
+    # installing the mock library involves upgrading setuptools...  I
+    # wanted to make setting up dependencies easy so we'll fake out
+    # the db instead.
+    def add_subscription(self, *a):
+        pass
+    def remove_subscription(self, *a):
+        pass
+
+
 class FakeRequest(object):
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, body):
+        self.body = body
 
 
 class TestServer(TestCase):
     def setUp(self):
-        self.s = Server()
+        self.s = Server(FakeDb())
         self.topic = "topic1"
         self.username = "user1"
         self.msg_data = "fake_data"
