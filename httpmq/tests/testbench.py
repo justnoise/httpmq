@@ -1,3 +1,4 @@
+import time
 # start up server
 # remove all users from table
 import requests
@@ -28,7 +29,7 @@ def check(result, expected_code, expected_text=None):
         msg = "{} != {}".format(result.text, expected_text)
         assert result.text == expected_text, msg
 
-if __name__ == "__main__":
+def correctness_test():
     check(publish("t1", "t1m0"), 200)
     check(subscribe("t1", "u1"), 200)
     check(subscribe("t1", "u2"), 200)
@@ -52,3 +53,27 @@ if __name__ == "__main__":
     check(retrieve("t2", "u2"), 200, "t2m1")
     check(retrieve("t1", "u3"), 200, "t1m1")
     check(retrieve("t2", "u3"), 404)
+    print "OK"
+
+def speed_test(num_msgs):
+    check(subscribe("t1", "u1"), 200)
+    check(subscribe("t1", "u2"), 200)
+    check(subscribe("t1", "u3"), 200)
+    check(subscribe("t1", "u4"), 200)
+    start = time.time()
+    for x in xrange(num_msgs):
+        msg = str(x)
+        check(subscribe("t1", "u4"), 200)
+        check(publish("t1", msg), 200)
+        check(retrieve("t1", "u1"), 200, msg)
+        check(retrieve("t1", "u2"), 200, msg)
+        check(retrieve("t1", "u3"), 200, msg)
+        check(retrieve("t1", "u4"), 200, msg)
+    end = time.time()
+    print "{} messages: {}s".format(num_msgs, end - start)
+    msgs_per_sec = (num_msgs * 5)/(end-start)
+    print "{} operations/sec".format(msgs_per_sec)
+
+if __name__ == "__main__":
+    #correctness_test()
+    speed_test(100)

@@ -5,7 +5,7 @@ monocle.init("twisted")
 from monocle.twisted_stack.utils import cb_to_df
 from twisted.trial.unittest import TestCase
 
-from server import Server, Message
+from server import MessageServer, Message
 
 
 def twistedtest_o(f):
@@ -32,7 +32,7 @@ class FakeRequest(object):
 
 class TestServer(TestCase):
     def setUp(self):
-        self.s = Server(FakeDb())
+        self.s = MessageServer(FakeDb())
         self.topic = "topic1"
         self.username = "user1"
         self.msg_data = "fake_data"

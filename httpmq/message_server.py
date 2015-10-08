@@ -3,24 +3,18 @@ from collections import defaultdict
 import argparse
 import logging
 
-
 import monocle
 from monocle import _o, Return, launch
 monocle.init("twisted")
 from monocle.stack import eventloop
 from monocle.stack.network import add_service
 from monocle.stack.network.http import HttpServer
-import daemon
+#import daemon
 
 from db import SubscriptionDb
 
 DEFAULT_PORT = 8888
 log = logging.getLogger(__name__)
-
-server = None
-
-# Things that would be cool:
-# 1. I should have put all this in a docker container and sent that
 
 #API:
 # subscribe: POST /<topic>/<username> -> 200
@@ -28,13 +22,14 @@ server = None
 # publish: POST /<topic> -> 200
 # retrieve: GET /<topic>/<username> -> 200, 204, 404
 
+
 class Message(object):
     def __init__(self, data, ref_count):
         self.data = data
         self.ref_count = ref_count
 
 
-class Server(object):
+class MessageServer(object):
     def __init__(self, db):
         self.db = db
         self.messages = defaultdict(dict)  #[topic]=>[message_id]=>message
@@ -115,7 +110,7 @@ class Server(object):
 #
 # Http Requset Routing
 #
-def setup_routing(s):
+def setup_routing(s, message_server):
     """Monocle's request routing is a bit silly: You need to have an
     instance of the server/router in order to use the routing
     decorator. You also need to have parsed the arguments to specify a
@@ -127,22 +122,22 @@ def setup_routing(s):
     """
     @s.post("/:topic/:username")
     def handle_subscribe(request, topic, username):
-        response = yield server.subscribe(request, topic, username)
+        response = yield message_server.subscribe(request, topic, username)
         yield Return(response)
 
     @s.delete("/:topic/:username")
     def handle_unsubscribe(request, topic, username):
-        response = yield server.unsubscribe(request, topic, username)
+        response = yield message_server.unsubscribe(request, topic, username)
         yield Return(response)
 
     @s.post("/:topic")
     def handle_publish(request, topic):
-        response = yield server.publish(request, topic)
+        response = yield message_server.publish(request, topic)
         yield Return(response)
 
     @s.get("/:topic/:username")
     def handle_retrieve(request, topic, username):
-        response = yield server.retrieve(request, topic, username)
+        response = yield message_server.retrieve(request, topic, username)
         yield Return(response)
 
 
@@ -170,43 +165,43 @@ def parse_args():
     parser.add_argument(
         "-p", "--port", type=int, default=DEFAULT_PORT,
         help="Port the server will listen on")
-    parser.add_argument(
-        "-d", "--daemonize",
-        action = "store_true", default=False,
-        help='run as a daemon in the background')
-    parser.add_argument(
-        "-P", "--pidfile", metavar="FILE",
-         default="/var/run/httpmq.pid",
-         help="when used with --daemonize, "
-         "write backgrounded Process ID to FILE [default: %(default)s]")
+    # parser.add_argument(
+    #     "-d", "--daemonize",
+    #     action = "store_true", default=False,
+    #     help='run as a daemon in the background')
+    # parser.add_argument(
+    #     "-P", "--pidfile", metavar="FILE",
+    #      default="./httpmq.pid",
+    #      help="when used with --daemonize, "
+    #      "write backgrounded Process ID to FILE [default: %(default)s]")
     parser.add_argument(
         "-l", "--logfile", metavar="FILE",
         help="Output to a logfile instead of stdout")
     parser.add_argument(
-        "-f", "--file", metavar="FILE",
+        nargs="?",
+        default="message_server_storage.dat",
+        metavar="SQLITE_FILE",
         dest="sql_filename",
-        help="sqlite database file")
+        help="sqlite database file to use for persistence")
 
     args = parser.parse_args()
     return args
 
 @_o
 def main():
-    global server
     try:
         args = parse_args()
         setup_logging(args.logfile)
-        if args.daemonize:
-            daemon.daemonize(args.pidfile)
-
+        # if args.daemonize:
+        #     daemon.daemonize(args.pidfile)
         db = SubscriptionDb(args.sql_filename)
-        yield db.create_database()
+        yield db.create_database()  #ensure we create db before continuing
+        message_server = MessageServer(db)
+        yield message_server.load_subscriptions()
 
-        s = HttpServer(args.port)
-        setup_routing(s)
-        server = Server(db)
-        yield server.load_subscriptions()
-        add_service(s)
+        http_server = HttpServer(args.port)
+        setup_routing(http_server, message_server)
+        add_service(http_server)
     except Exception as e:
         log.exception(e)
 
