@@ -75,5 +75,4 @@ def speed(num_msgs):
     print "{} operations/sec".format(msgs_per_sec)
 
 if __name__ == "__main__":
-    #correctness_test()
     speed(100)
