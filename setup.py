@@ -18,4 +18,6 @@ setup(name='httpmq',
       entry_points = {
           'console_scripts': ['httpmq=httpmq.message_server:main'],
       },
+      test_suite='nose.collector',
+      tests_require=['nose'],
       zip_safe=False)
