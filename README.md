@@ -1,7 +1,10 @@
+## What Is It
+It's a simple HTTP Publish/Subscribe Server.
+
 ## Installing
 This is a standard python package and can be installed using pip.
 
-`pip install "git+https://github.com/justnoise/httpmq#egg=httpmq"`
+`pip install git+https://github.com/justnoise/httpmq#egg=httpmq`
 
 Note: if you are starting from scratch on a machine, you'll need to set up a number of things.  For example, on ubuntu you'll need:
 * `sudo apt-get update`
@@ -15,7 +18,7 @@ The httpmq package will also install a number of requirements (twisted, monocle,
 sudo pip install virtualenvwrapper
 source /usr/local/bin/virtualenvwrapper.sh
 mkvirtualenv httpmq
-pip install "git+https://github.com/justnoise/httpmq#egg=httpmq"
+pip install git+https://github.com/justnoise/httpmq#egg=httpmq
 ```
 
 ## Running
