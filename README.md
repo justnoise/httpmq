@@ -44,6 +44,6 @@ In a production system, we would probably want to add more logging.  I've found 
 
 It would be great to include an upstart or systemd script to make sure people are always running this great piece of software.
 
-While I've used the daemon package a number of times before, daemonizing the message server hung he process at 100% cpu usage on my mac.  I need to investigate why this happened.  For now, I've commented out that functionality.  I usually don't like keeping around commented code in a system but I want to remember to get in and debug that after sending this off.
+While I've used the daemon package a number of times before, daemonizing the message server hung he process at 100% cpu usage on my mac (but works fine on linux).  I need to investigate why its failing on mac.  For now, I've commented out that functionality.  I usually don't like keeping around commented code in a system but I want to remember to get in and debug that after sending this off.
 
 Finally, with another bit of effort and some more time, it would be cool to put the whole thing in a docker container and use flocker to keep track of the storage file	.  Would be a good thing to do at some point but not this point.
