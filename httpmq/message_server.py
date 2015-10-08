@@ -179,6 +179,7 @@ def parse_args():
         help="Output to a logfile instead of stdout")
     parser.add_argument(
         nargs="?",
+        default="message_server_storage.dat",
         metavar="SQLITE_FILE",
         dest="sql_filename",
         help="sqlite database file to use for persistence")

@@ -5,7 +5,7 @@ monocle.init("twisted")
 from monocle.twisted_stack.utils import cb_to_df
 from twisted.trial.unittest import TestCase
 
-from server import MessageServer, Message
+from message_server import MessageServer, Message
 
 
 def twistedtest_o(f):

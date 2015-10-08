@@ -29,7 +29,7 @@ def check(result, expected_code, expected_text=None):
         msg = "{} != {}".format(result.text, expected_text)
         assert result.text == expected_text, msg
 
-def correctness_test():
+def correctness():
     check(publish("t1", "t1m0"), 200)
     check(subscribe("t1", "u1"), 200)
     check(subscribe("t1", "u2"), 200)
@@ -55,7 +55,7 @@ def correctness_test():
     check(retrieve("t2", "u3"), 404)
     print "OK"
 
-def speed_test(num_msgs):
+def speed(num_msgs):
     check(subscribe("t1", "u1"), 200)
     check(subscribe("t1", "u2"), 200)
     check(subscribe("t1", "u3"), 200)
@@ -76,4 +76,4 @@ def speed_test(num_msgs):
 
 if __name__ == "__main__":
     #correctness_test()
-    speed_test(100)
+    speed(100)
