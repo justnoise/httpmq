@@ -15,4 +15,7 @@ setup(name='httpmq',
           "daemon",
           "requests"
       ],
+      entry_points = {
+          'console_scripts': ['httpmq=httpmq.message_server:main'],
+      },
       zip_safe=False)

@@ -188,7 +188,7 @@ def parse_args():
     return args
 
 @_o
-def main():
+def run_server():
     try:
         args = parse_args()
         setup_logging(args.logfile)
@@ -205,7 +205,9 @@ def main():
     except Exception as e:
         log.exception(e)
 
+def main():
+    launch(run_server)
+    eventloop.run()
 
 if __name__ == '__main__':
-    launch(main)
-    eventloop.run()
+    main()
